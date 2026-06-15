@@ -1,6 +1,38 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import { QrCode, CheckCircle2, Clock } from 'lucide-react'
+import { CheckCircle2, Clock } from 'lucide-react'
+import type { Metadata } from 'next'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>
+}): Promise<Metadata> {
+  const { token } = await params
+  const db = createServiceClient()
+  const { data: ticket } = await db.from('tickets').select('event_id').eq('token', token).single()
+  if (!ticket) return {}
+  const { data: event } = await db.from('events').select('name, image_url').eq('id', ticket.event_id).single()
+  if (!event) return {}
+
+  const title = event.name
+  const description = `You are invited to ${event.name}`
+  const ogImages = event.image_url
+    ? [{ url: event.image_url as string, width: 1200, height: 630 }]
+    : []
+
+  return {
+    title,
+    description,
+    openGraph: { title, description, images: ogImages },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: event.image_url ? [event.image_url as string] : [],
+    },
+  }
+}
 
 export default async function TicketPage({
   params,
@@ -20,7 +52,7 @@ export default async function TicketPage({
 
   const [{ data: delegate }, { data: event }] = await Promise.all([
     db.from('delegates').select('name, color').eq('id', ticket.delegate_id).single(),
-    db.from('events').select('name, date, venue').eq('id', ticket.event_id).single(),
+    db.from('events').select('name, date, venue, image_url').eq('id', ticket.event_id).single(),
   ])
 
   const accent =
@@ -48,12 +80,22 @@ export default async function TicketPage({
   const qrUrl = `/api/qr?token=${encodeURIComponent(token)}&size=240${delegate?.color ? `&color=${encodeURIComponent(delegate.color)}` : ''}`
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-950 via-gray-900 to-black flex flex-col items-center justify-center px-4 py-12">
+    <div
+      className={`min-h-screen flex flex-col items-center justify-center px-4 py-12 relative ${
+        event?.image_url
+          ? 'bg-cover bg-center bg-no-repeat'
+          : 'bg-linear-to-br from-gray-950 via-gray-900 to-black'
+      }`}
+      style={event?.image_url ? { backgroundImage: `url(${event.image_url})` } : undefined}
+    >
+      {event?.image_url && (
+        <div className="absolute inset-0 bg-black/65" />
+      )}
+      <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
       {/* Logo */}
       <div className="flex items-center gap-2 mb-8">
-        <div className="bg-white/10 rounded-lg p-1.5">
-          <QrCode className="w-4 h-4 text-white" />
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.svg" alt="Prime Scanner" width={28} height={28} className="rounded-lg opacity-80" />
         <span className="text-white/60 text-sm font-medium tracking-wide">Prime Scanner</span>
       </div>
 
@@ -68,7 +110,8 @@ export default async function TicketPage({
           <p className="text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase">
             Official Access Pass
           </p>
-          <QrCode className="w-4 h-4 text-gray-300" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="" width={20} height={20} className="rounded opacity-30" />
         </div>
 
         {/* Tear line */}
@@ -140,6 +183,7 @@ export default async function TicketPage({
       <p className="text-white/20 text-xs mt-8 tracking-wide">
         This pass is personal and non-transferable
       </p>
+      </div>
     </div>
   )
 }

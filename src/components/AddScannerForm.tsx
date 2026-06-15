@@ -64,7 +64,7 @@ export default function AddScannerForm({ eventId }: { eventId: string }) {
                   name="scanner_name"
                   required
                   placeholder="e.g. Gate Staff"
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition placeholder:text-gray-400"
                 />
               </div>
               <div>
@@ -86,7 +86,7 @@ export default function AddScannerForm({ eventId }: { eventId: string }) {
                   required
                   minLength={6}
                   placeholder="Min. 6 characters"
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition placeholder:text-gray-400"
                 />
               </div>
 

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { QrCode, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -32,9 +32,8 @@ export default function LoginPage() {
       {/* Left branding panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-indigo-900 via-indigo-800 to-black flex-col justify-between p-12">
         <div className="flex items-center gap-2.5">
-          <div className="bg-white/10 rounded-lg p-1.5">
-            <QrCode className="w-5 h-5 text-white" />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Prime Scanner" width={32} height={32} className="rounded-lg" />
           <span className="text-white font-semibold text-lg tracking-tight">Prime Scanner</span>
         </div>
 
@@ -71,9 +70,8 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="bg-indigo-600 rounded-lg p-1.5">
-              <QrCode className="w-5 h-5 text-white" />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.svg" alt="Prime Scanner" width={32} height={32} className="rounded-lg" />
             <span className="font-semibold text-lg tracking-tight">Prime Scanner</span>
           </div>
 
@@ -89,7 +87,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition placeholder:text-gray-400"
               />
             </div>
             <div>
@@ -100,7 +98,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition"
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white transition placeholder:text-gray-400"
               />
             </div>
             {error && (

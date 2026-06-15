@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { ScanLine, ArrowRight } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
 
 export default function ScannerLoginPage() {
   const [username, setUsername] = useState('')
@@ -33,23 +33,15 @@ export default function ScannerLoginPage() {
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 border-r border-white/10">
         <div className="flex items-center gap-2.5">
-          <div className="bg-white/10 rounded-lg p-1.5">
-            <ScanLine className="w-5 h-5 text-white" />
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Prime Scanner" width={32} height={32} className="rounded-lg" />
           <span className="text-white font-semibold text-lg tracking-tight">Prime Scanner</span>
         </div>
 
         <div>
-          <div className="mb-8 relative">
-            {/* Stylised scan lines decoration */}
-            <div className="w-32 h-32 border-2 border-white/20 rounded-2xl flex items-center justify-center relative">
-              <div className="absolute inset-0 flex flex-col justify-around px-2 py-2 gap-1">
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className="h-px bg-white/10 w-full" />
-                ))}
-              </div>
-              <ScanLine className="w-10 h-10 text-indigo-400" />
-            </div>
+          <div className="mb-8">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.svg" alt="Prime Scanner" width={80} height={80} className="rounded-2xl" />
           </div>
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
             Ready to<br />scan tickets.
@@ -67,9 +59,8 @@ export default function ScannerLoginPage() {
         <div className="w-full max-w-sm">
           {/* Mobile header */}
           <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="bg-white/10 rounded-lg p-1.5">
-              <ScanLine className="w-5 h-5 text-white" />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.svg" alt="Prime Scanner" width={32} height={32} className="rounded-lg" />
             <span className="text-white font-semibold text-lg tracking-tight">Prime Scanner</span>
           </div>
 
@@ -86,7 +77,7 @@ export default function ScannerLoginPage() {
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 placeholder="yourname"
-                className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-gray-600 transition"
+                className="w-full bg-white/10 border border-white/20 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-gray-400 transition"
               />
             </div>
             <div>
@@ -97,7 +88,7 @@ export default function ScannerLoginPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-gray-600 transition"
+                className="w-full bg-white/10 border border-white/20 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder:text-gray-400 transition"
               />
             </div>
             {error && (

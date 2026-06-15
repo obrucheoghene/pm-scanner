@@ -6,6 +6,7 @@ import EventStatusBadge from '@/components/EventStatusBadge'
 import AddDelegateForm from '@/components/AddDelegateForm'
 import DelegateTable from '@/components/DelegateTable'
 import AddScannerForm from '@/components/AddScannerForm'
+import EditEventForm from '@/components/EditEventForm'
 import type { Delegate, Ticket, Event, Scanner } from '@/types'
 
 export default async function EventDetailPage({
@@ -40,7 +41,7 @@ export default async function EventDetailPage({
     <div className="space-y-8">
       {/* Page header */}
       <div>
-        <Link href="/events" className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 mb-3 transition-colors">
+        <Link href="/events" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-3 transition-colors">
           <ChevronLeft className="w-3.5 h-3.5" />
           Events
         </Link>
@@ -51,13 +52,15 @@ export default async function EventDetailPage({
               <h1 className="text-2xl font-bold">{(event as Event).name}</h1>
               <EventStatusBadge status={(event as Event).status} />
             </div>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               {(event as Event).date ?? 'No date'} · {(event as Event).venue ?? 'No venue'}
             </p>
           </div>
 
-          {/* Scanner button lives here — top of page, prominent */}
-          <AddScannerForm eventId={id} />
+          <div className="flex items-center gap-2 shrink-0">
+            <EditEventForm event={event as Event} />
+            <AddScannerForm eventId={id} />
+          </div>
         </div>
 
         {/* Scanner accounts — compact chips row */}
@@ -70,7 +73,7 @@ export default async function EventDetailPage({
               >
                 <Scan className="w-3 h-3 text-indigo-500" />
                 <span className="font-medium">{s.name}</span>
-                <span className="text-gray-400 font-mono">@{s.username}</span>
+                <span className="text-gray-500 font-mono">@{s.username}</span>
               </div>
             ))}
           </div>
@@ -80,7 +83,7 @@ export default async function EventDetailPage({
       {/* Delegates section */}
       <section className="space-y-4">
         <h2 className="font-semibold text-lg">
-          Delegates <span className="text-gray-400 font-normal text-base">({rows.length})</span>
+          Delegates <span className="text-gray-500 font-normal text-base">({rows.length})</span>
         </h2>
         <AddDelegateForm eventId={id} />
         <DelegateTable rows={rows} eventId={id} />

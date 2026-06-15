@@ -27,14 +27,17 @@ export async function addDelegate(eventId: string, formData: FormData) {
   revalidatePath(`/events/${eventId}`)
 }
 
-export async function addDelegatesBulk(eventId: string, names: string[]) {
+export async function addDelegatesBulk(
+  eventId: string,
+  rows: { name: string; color?: string | null }[]
+) {
   const db = createServiceClient()
-  const trimmed = names.map(n => n.trim()).filter(Boolean)
+  const trimmed = rows.map(r => ({ ...r, name: r.name.trim() })).filter(r => r.name)
   if (!trimmed.length) return
 
   const { data: delegates, error } = await db
     .from('delegates')
-    .insert(trimmed.map(name => ({ event_id: eventId, name })))
+    .insert(trimmed.map(({ name, color }) => ({ event_id: eventId, name, color: color ?? null })))
     .select('id')
 
   if (error || !delegates) throw error

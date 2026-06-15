@@ -1,23 +1,30 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Plus, X, ImagePlus } from 'lucide-react'
-import { createEvent } from '@/app/(organizer)/events/actions'
+import { Pencil, X, ImagePlus } from 'lucide-react'
+import { updateEvent } from '@/app/(organizer)/events/actions'
+import type { Event } from '@/types'
 
-export default function CreateEventForm() {
+interface Props {
+  event: Event
+}
+
+export default function EditEventForm({ event }: Props) {
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
-  const [preview, setPreview] = useState<string | null>(null)
+  const [preview, setPreview] = useState<string | null>(event.image_url ?? null)
   const [imageFile, setImageFile] = useState<File | null>(null)
+  const [removeImage, setRemoveImage] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!open) return
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') handleClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
@@ -25,12 +32,21 @@ export default function CreateEventForm() {
     if (!file) return
     setImageFile(file)
     setPreview(URL.createObjectURL(file))
+    setRemoveImage(false)
+  }
+
+  function handleRemoveImage() {
+    setPreview(null)
+    setImageFile(null)
+    setRemoveImage(true)
+    if (fileRef.current) fileRef.current.value = ''
   }
 
   function handleClose() {
     setOpen(false)
-    setPreview(null)
+    setPreview(event.image_url ?? null)
     setImageFile(null)
+    setRemoveImage(false)
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -38,19 +54,21 @@ export default function CreateEventForm() {
     setPending(true)
     const fd = new FormData(e.currentTarget)
     if (imageFile) fd.set('image', imageFile)
-    await createEvent(fd)
+    if (removeImage) fd.set('remove_image', '1')
+    await updateEvent(event.id, fd)
     setPending(false)
-    handleClose()
+    setOpen(false)
   }
 
   return (
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition shadow-sm"
+        className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-600 px-3 py-2 rounded-xl text-sm hover:bg-gray-50 hover:border-gray-300 transition"
+        title="Edit event"
       >
-        <Plus className="w-4 h-4" />
-        New event
+        <Pencil className="w-3.5 h-3.5" />
+        Edit
       </button>
 
       {open && (
@@ -59,11 +77,10 @@ export default function CreateEventForm() {
           onClick={e => { if (e.target === e.currentTarget) handleClose() }}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            {/* Modal header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-gray-100">
               <div>
-                <h2 className="font-semibold text-base">Create event</h2>
-                <p className="text-xs text-gray-500 mt-0.5">Add a new event to manage delegates for</p>
+                <h2 className="font-semibold text-base">Edit event</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Update event details</p>
               </div>
               <button
                 onClick={handleClose}
@@ -73,13 +90,13 @@ export default function CreateEventForm() {
               </button>
             </div>
 
-            {/* Modal body */}
             <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Event name *</label>
                 <input
                   name="name"
                   required
+                  defaultValue={event.name}
                   placeholder="e.g. Tech Summit 2026"
                   className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition placeholder:text-gray-400"
                 />
@@ -90,20 +107,21 @@ export default function CreateEventForm() {
                   <input
                     name="date"
                     type="date"
-                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition placeholder:text-gray-400"
+                    defaultValue={event.date ?? ''}
+                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Venue</label>
                   <input
                     name="venue"
+                    defaultValue={event.venue ?? ''}
                     placeholder="e.g. City Hall"
                     className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition placeholder:text-gray-400"
                   />
                 </div>
               </div>
 
-              {/* Image upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Event image <span className="text-gray-400 font-normal">(optional · used as invitation preview)</span>
@@ -122,11 +140,7 @@ export default function CreateEventForm() {
                 >
                   {preview ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={preview}
-                      alt="Event preview"
-                      className="w-full h-40 object-cover"
-                    />
+                    <img src={preview} alt="Event preview" className="w-full h-40 object-cover" />
                   ) : (
                     <div className="flex flex-col items-center justify-center gap-2 py-8 text-gray-400">
                       <ImagePlus className="w-7 h-7" />
@@ -138,7 +152,7 @@ export default function CreateEventForm() {
                 {preview && (
                   <button
                     type="button"
-                    onClick={() => { setPreview(null); setImageFile(null); if (fileRef.current) fileRef.current.value = '' }}
+                    onClick={handleRemoveImage}
                     className="mt-1.5 text-xs text-gray-400 hover:text-red-500 transition-colors"
                   >
                     Remove image
@@ -152,7 +166,7 @@ export default function CreateEventForm() {
                   disabled={pending}
                   className="flex-1 bg-indigo-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition"
                 >
-                  {pending ? 'Creating…' : 'Create event'}
+                  {pending ? 'Saving…' : 'Save changes'}
                 </button>
                 <button
                   type="button"

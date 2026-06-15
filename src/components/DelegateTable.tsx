@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Search } from 'lucide-react'
 import type { Delegate, Ticket, ScanLog } from '@/types'
 import { ticketUrl } from '@/lib/qr'
 import { deleteDelegate } from '@/app/(organizer)/events/[id]/actions'
@@ -19,6 +20,9 @@ interface Props {
 export default function DelegateTable({ rows, eventId }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null)
   const [logs, setLogs] = useState<Record<string, ScanLog[]>>({})
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | 'checked_in' | 'not_checked_in'>('all')
+  const [sortBy, setSortBy] = useState<'added' | 'name_asc' | 'name_desc' | 'checked_in'>('added')
 
   async function toggleExpand(delegateId: string, ticketId: string) {
     if (expanded === delegateId) {
@@ -91,12 +95,73 @@ export default function DelegateTable({ rows, eventId }: Props) {
     URL.revokeObjectURL(url)
   }
 
+  const visibleRows = rows
+    .filter(({ delegate, ticket }) => {
+      if (search && !delegate.name.toLowerCase().includes(search.toLowerCase())) return false
+      if (statusFilter === 'checked_in' && ticket.status !== 'checked_in') return false
+      if (statusFilter === 'not_checked_in' && ticket.status === 'checked_in') return false
+      return true
+    })
+    .sort((a, b) => {
+      if (sortBy === 'name_asc') return a.delegate.name.localeCompare(b.delegate.name)
+      if (sortBy === 'name_desc') return b.delegate.name.localeCompare(a.delegate.name)
+      if (sortBy === 'checked_in') return (b.ticket.checked_in_at ?? '').localeCompare(a.ticket.checked_in_at ?? '')
+      return 0
+    })
+
   if (!rows.length) {
-    return <p className="text-sm text-gray-400">No delegates yet.</p>
+    return <p className="text-sm text-gray-500">No delegates yet.</p>
   }
+
+  const isFiltered = search || statusFilter !== 'all' || sortBy !== 'added'
 
   return (
     <div className="space-y-3">
+      {/* Filter / sort controls */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search delegates…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition placeholder:text-gray-400"
+          />
+        </div>
+        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 text-sm shrink-0">
+          {(['all', 'checked_in', 'not_checked_in'] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setStatusFilter(f)}
+              className={`px-3 py-1.5 rounded-lg font-medium transition-colors whitespace-nowrap ${
+                statusFilter === f
+                  ? 'bg-white text-indigo-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {f === 'all' ? 'All' : f === 'checked_in' ? 'Checked in' : 'Not checked in'}
+            </button>
+          ))}
+        </div>
+        <select
+          value={sortBy}
+          onChange={e => setSortBy(e.target.value as typeof sortBy)}
+          className="text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition bg-white shrink-0"
+        >
+          <option value="added">Added first</option>
+          <option value="name_asc">Name A→Z</option>
+          <option value="name_desc">Name Z→A</option>
+          <option value="checked_in">Checked in first</option>
+        </select>
+      </div>
+
+      {isFiltered && (
+        <p className="text-xs text-gray-500">
+          {visibleRows.length} of {rows.length} delegate{rows.length !== 1 ? 's' : ''}
+        </p>
+      )}
+
       <div className="flex gap-2 justify-end">
         <button
           onClick={exportCSV}
@@ -124,7 +189,14 @@ export default function DelegateTable({ rows, eventId }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {rows.map(({ delegate, ticket }) => (
+            {visibleRows.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-400">
+                  No delegates match your filters.
+                </td>
+              </tr>
+            )}
+            {visibleRows.map(({ delegate, ticket }) => (
               <>
                 <tr
                   key={delegate.id}
@@ -164,7 +236,7 @@ export default function DelegateTable({ rows, eventId }: Props) {
                         )}
                       </span>
                     ) : (
-                      <span className="text-gray-400">Not checked in</span>
+                      <span className="text-gray-500">Not checked in</span>
                     )}
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell text-gray-500">
@@ -174,20 +246,20 @@ export default function DelegateTable({ rows, eventId }: Props) {
                     <div className="flex gap-2 flex-wrap">
                       <button
                         onClick={() => copyLink(ticket.token)}
-                        className="text-xs text-blue-600 hover:underline"
+                        className="text-xs text-blue-600 hover:underline cursor-pointer"
                       >
                         Copy link
                       </button>
                       <button
                         onClick={() => downloadQR(ticket.token, delegate.name, delegate.color)}
-                        className="text-xs text-blue-600 hover:underline"
+                        className="text-xs text-blue-600 hover:underline cursor-pointer"
                       >
                         Download QR
                       </button>
                       <form action={deleteDelegate.bind(null, eventId, delegate.id)}>
                         <button
                           type="submit"
-                          className="text-xs text-red-500 hover:underline"
+                          className="text-xs text-red-500 hover:underline cursor-pointer"
                           onClick={e => {
                             if (!confirm(`Remove ${delegate.name}?`)) e.preventDefault()
                           }}
@@ -209,7 +281,7 @@ export default function DelegateTable({ rows, eventId }: Props) {
                       ) : (
                         <table className="text-xs w-full max-w-md">
                           <thead>
-                            <tr className="text-gray-400">
+                            <tr className="text-gray-500">
                               <th className="text-left py-1">Time</th>
                               <th className="text-left py-1">Result</th>
                             </tr>

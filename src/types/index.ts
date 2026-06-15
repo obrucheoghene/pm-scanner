@@ -8,6 +8,7 @@ export interface Event {
   date: string | null
   venue: string | null
   status: EventStatus
+  image_url: string | null
   created_at: string
 }
 

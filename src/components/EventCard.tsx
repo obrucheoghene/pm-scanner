@@ -23,7 +23,7 @@ export default function EventCard({ event }: { event: Event }) {
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <h2 className="font-semibold text-base leading-tight truncate">{event.name}</h2>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-gray-500 mt-1">
             {event.date ? new Date(event.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'No date'}
             {event.venue ? ` · ${event.venue}` : ''}
           </p>
@@ -35,7 +35,7 @@ export default function EventCard({ event }: { event: Event }) {
               deleteEvent(event.id)
             }
           }}
-          className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
           title="Delete event"
         >
           <Trash2 className="w-4 h-4" />

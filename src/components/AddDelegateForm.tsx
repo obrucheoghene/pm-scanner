@@ -7,11 +7,19 @@ import { addDelegate, addDelegatesBulk } from '@/app/(organizer)/events/[id]/act
 const PALETTE = [
   { label: 'Default', hex: '' },
   { label: 'Red', hex: '#e11d48' },
-  { label: 'Blue', hex: '#2563eb' },
-  { label: 'Green', hex: '#16a34a' },
-  { label: 'Purple', hex: '#9333ea' },
+  { label: 'Rose', hex: '#f43f5e' },
+  { label: 'Pink', hex: '#ec4899' },
   { label: 'Orange', hex: '#ea580c' },
+  { label: 'Amber', hex: '#d97706' },
+  { label: 'Yellow', hex: '#ca8a04' },
+  { label: 'Lime', hex: '#65a30d' },
+  { label: 'Green', hex: '#16a34a' },
   { label: 'Teal', hex: '#0d9488' },
+  { label: 'Cyan', hex: '#0891b2' },
+  { label: 'Blue', hex: '#2563eb' },
+  { label: 'Indigo', hex: '#4f46e5' },
+  { label: 'Purple', hex: '#9333ea' },
+  { label: 'Fuchsia', hex: '#c026d3' },
 ]
 
 export default function AddDelegateForm({ eventId }: { eventId: string }) {
@@ -19,6 +27,24 @@ export default function AddDelegateForm({ eventId }: { eventId: string }) {
   const [selectedColor, setSelectedColor] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
+
+  function downloadTemplate() {
+    const colors = PALETTE.filter(p => p.hex).map(p => p.label)
+    const csv = [
+      'name,color',
+      'Alice Smith,Red',
+      'Bob Jones,Blue',
+      `Carol White,${colors[3] ?? 'Green'}`,
+      'David Lee,',
+    ].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'delegates-template.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   async function handleSingle(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -37,10 +63,18 @@ export default function AddDelegateForm({ eventId }: { eventId: string }) {
       header: true,
       skipEmptyLines: true,
       complete: async result => {
-        const names = result.data
-          .map(row => row.name ?? row.Name ?? Object.values(row)[0] ?? '')
-          .filter(Boolean)
-        await addDelegatesBulk(eventId, names)
+        const rows = result.data
+          .map(row => {
+            const name = (row.name ?? row.Name ?? Object.values(row)[0] ?? '').trim()
+            const rawColor = (row.color ?? row.Color ?? '').trim()
+            const color = rawColor
+              ? (PALETTE.find(p => p.label.toLowerCase() === rawColor.toLowerCase())?.hex
+                  ?? (/^#[0-9a-f]{3,6}$/i.test(rawColor) ? rawColor : null))
+              : null
+            return { name, color: color ?? null }
+          })
+          .filter(r => r.name)
+        await addDelegatesBulk(eventId, rows)
         setPending(false)
         if (fileRef.current) fileRef.current.value = ''
       },
@@ -56,7 +90,7 @@ export default function AddDelegateForm({ eventId }: { eventId: string }) {
             name="name"
             required
             placeholder="Delegate name"
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+            className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-black placeholder:text-gray-400"
           />
           <button
             type="submit"
@@ -90,13 +124,21 @@ export default function AddDelegateForm({ eventId }: { eventId: string }) {
         <input type="hidden" name="color" value={selectedColor} />
       </form>
 
-      <div className="flex items-center gap-2 text-sm text-gray-500">
+      <div className="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
         <span>or</span>
         <label className="cursor-pointer text-black underline underline-offset-2 hover:text-gray-700">
           Upload CSV
           <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={handleCSV} />
         </label>
-        <span className="text-gray-400">(must have a "name" column)</span>
+        <span className="text-gray-400">(columns: name, color — color optional)</span>
+        <span className="text-gray-300">·</span>
+        <button
+          type="button"
+          onClick={downloadTemplate}
+          className="text-gray-400 underline underline-offset-2 hover:text-gray-600"
+        >
+          Download template
+        </button>
       </div>
     </div>
   )
