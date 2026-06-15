@@ -71,9 +71,11 @@ export default async function TicketPage({
     : null
 
   const checkinTime = ticket.checked_in_at
-    ? new Date(ticket.checked_in_at).toLocaleTimeString('en-GB', {
-        hour: '2-digit',
+    ? new Date(ticket.checked_in_at).toLocaleTimeString('en-NG', {
+        hour: 'numeric',
         minute: '2-digit',
+        hour12: true,
+        timeZone: 'Africa/Lagos',
       })
     : null
 

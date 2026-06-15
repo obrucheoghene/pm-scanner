@@ -231,7 +231,7 @@ export default function DelegateTable({ rows, eventId }: Props) {
                         Checked in
                         {ticket.checked_in_at && (
                           <span className="text-gray-400 text-xs ml-1">
-                            {new Date(ticket.checked_in_at).toLocaleTimeString()}
+                            {new Date(ticket.checked_in_at).toLocaleTimeString('en-NG', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Africa/Lagos' })}
                           </span>
                         )}
                       </span>
@@ -290,7 +290,7 @@ export default function DelegateTable({ rows, eventId }: Props) {
                             {logs[delegate.id].map(log => (
                               <tr key={log.id}>
                                 <td className="py-0.5 text-gray-500">
-                                  {new Date(log.scanned_at).toLocaleString()}
+                                  {new Date(log.scanned_at).toLocaleString('en-NG', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Africa/Lagos', day: 'numeric', month: 'short' })}
                                 </td>
                                 <td className={`py-0.5 font-medium ${log.result === 'accepted' ? 'text-green-600' : 'text-red-500'}`}>
                                   {log.result}
