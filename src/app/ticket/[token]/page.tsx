@@ -1,5 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import { QrCode, CheckCircle2, Clock } from 'lucide-react'
 
 export default async function TicketPage({
   params,
@@ -11,50 +12,134 @@ export default async function TicketPage({
 
   const { data: ticket } = await db
     .from('tickets')
-    .select('id, delegate_id, status, checked_in_at')
+    .select('id, delegate_id, event_id, status, checked_in_at')
     .eq('token', token)
     .single()
 
   if (!ticket) notFound()
 
-  const { data: delegate } = await db
-    .from('delegates')
-    .select('name')
-    .eq('id', ticket.delegate_id)
-    .single()
+  const [{ data: delegate }, { data: event }] = await Promise.all([
+    db.from('delegates').select('name, color').eq('id', ticket.delegate_id).single(),
+    db.from('events').select('name, date, venue').eq('id', ticket.event_id).single(),
+  ])
+
+  const accent =
+    delegate?.color && delegate.color !== '#000000'
+      ? delegate.color
+      : '#4f46e5'
+
+  const checkedIn = ticket.status === 'checked_in'
+
+  const eventDate = event?.date
+    ? new Date(event.date).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    : null
+
+  const checkinTime = ticket.checked_in_at
+    ? new Date(ticket.checked_in_at).toLocaleTimeString('en-GB', {
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : null
+
+  const qrUrl = `/api/qr?token=${encodeURIComponent(token)}&size=240${delegate?.color ? `&color=${encodeURIComponent(delegate.color)}` : ''}`
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="bg-white rounded-2xl shadow-lg p-8 text-center max-w-xs w-full">
-        <h1 className="text-xl font-bold mb-1">{delegate?.name ?? 'Delegate'}</h1>
-        <p className="text-sm text-gray-400 mb-6">Event ticket</p>
+    <div className="min-h-screen bg-linear-to-br from-gray-950 via-gray-900 to-black flex flex-col items-center justify-center px-4 py-12">
+      {/* Logo */}
+      <div className="flex items-center gap-2 mb-8">
+        <div className="bg-white/10 rounded-lg p-1.5">
+          <QrCode className="w-4 h-4 text-white" />
+        </div>
+        <span className="text-white/60 text-sm font-medium tracking-wide">Prime Scanner</span>
+      </div>
+
+      {/* Pass card */}
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden">
+
+        {/* Accent bar */}
+        <div className="h-2.5 w-full" style={{ backgroundColor: accent }} />
+
+        {/* Card header */}
+        <div className="flex items-center justify-between px-6 pt-5 pb-4">
+          <p className="text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase">
+            Official Access Pass
+          </p>
+          <QrCode className="w-4 h-4 text-gray-300" />
+        </div>
+
+        {/* Tear line */}
+        <div className="mx-6 border-t border-dashed border-gray-200" />
+
+        {/* Event */}
+        <div className="px-6 pt-5 pb-4">
+          <p className="text-[10px] font-bold tracking-[0.18em] text-gray-400 uppercase mb-1">Event</p>
+          <h1 className="text-2xl font-black text-gray-900 leading-tight uppercase">
+            {event?.name ?? 'Event'}
+          </h1>
+          {(eventDate || event?.venue) && (
+            <p className="text-xs text-gray-400 mt-1.5">
+              {[eventDate, event?.venue].filter(Boolean).join(' · ')}
+            </p>
+          )}
+        </div>
+
+        {/* Tear line */}
+        <div className="mx-6 border-t border-dashed border-gray-200" />
+
+        {/* Delegate */}
+        <div className="px-6 pt-5 pb-5">
+          <p className="text-[10px] font-bold tracking-[0.18em] text-gray-400 uppercase mb-1">Delegate</p>
+          <h2 className="text-3xl font-black text-gray-900 leading-tight">
+            {delegate?.name ?? 'Guest'}
+          </h2>
+        </div>
+
+        {/* Tear line */}
+        <div className="mx-6 border-t border-dashed border-gray-200" />
 
         {/* QR code */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={`/api/qr?token=${encodeURIComponent(token)}&size=280`}
-          alt="QR code"
-          width={280}
-          height={280}
-          className="mx-auto rounded-lg"
-        />
+        <div className="flex flex-col items-center px-6 pt-6 pb-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={qrUrl}
+            alt="Entry QR code"
+            width={240}
+            height={240}
+            className="rounded-xl"
+          />
+          <p className="text-[10px] text-gray-400 tracking-wider mt-3 uppercase">
+            Scan to verify · Present at entry gate
+          </p>
+        </div>
 
-        <div className="mt-6">
-          {ticket.status === 'checked_in' ? (
-            <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
-              <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />
-              Checked in{' '}
-              {ticket.checked_in_at &&
-                new Date(ticket.checked_in_at).toLocaleTimeString()}
+        {/* Tear line */}
+        <div className="mx-6 border-t border-dashed border-gray-200" />
+
+        {/* Check-in status */}
+        <div className="px-6 py-4">
+          {checkedIn ? (
+            <div className="flex items-center gap-2 text-green-600">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span className="text-sm font-medium">
+                Checked in{checkinTime ? ` at ${checkinTime}` : ''}
+              </span>
             </div>
           ) : (
-            <div className="inline-flex items-center gap-2 bg-gray-100 text-gray-600 px-4 py-2 rounded-full text-sm font-medium">
-              <span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />
-              Not yet checked in
+            <div className="flex items-center gap-2 text-gray-400">
+              <Clock className="w-4 h-4 shrink-0" />
+              <span className="text-sm font-medium">Present at entry gate</span>
             </div>
           )}
         </div>
       </div>
+
+      <p className="text-white/20 text-xs mt-8 tracking-wide">
+        This pass is personal and non-transferable
+      </p>
     </div>
   )
 }
